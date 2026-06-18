@@ -1,0 +1,22 @@
+server:
+  port: 8080
+  address: 0.0.0.0
+  tomcat:
+    apr:
+      enabled: false
+
+logging:
+  level:
+    com.fatoldfool.chatbot: DEBUG
+
+chatbot:
+  storage:
+    rooms-file-path: ./chatbot-rooms.json
+    messages-file-path: ./chatbot-messages.json
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
