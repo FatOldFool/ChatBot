@@ -1,7 +1,9 @@
 package com.fatoldfool.chatbot.infrastructure.config;
 
 import com.fatoldfool.chatbot.application.usecase.CreateRoomUseCase;
+import com.fatoldfool.chatbot.application.usecase.GetAllRoomsUseCase;
 import com.fatoldfool.chatbot.application.usecase.GetRoomMessagesUseCase;
+import com.fatoldfool.chatbot.application.usecase.LoginUseCase;
 import com.fatoldfool.chatbot.application.usecase.SendChatMessageUseCase;
 import com.fatoldfool.chatbot.domain.port.*;
 import org.springframework.context.annotation.Bean;
@@ -33,5 +35,15 @@ public class AppConfig {
     public GetRoomMessagesUseCase getRoomMessagesUseCase(MessageRepository messageRepository,
                                                          LoggerPort loggerPort) {
         return new GetRoomMessagesUseCase(messageRepository, loggerPort);
+    }
+    
+    @Bean
+    public GetAllRoomsUseCase getAllRoomsUseCase(ChatRoomRepository chatRoomRepository, LoggerPort loggerPort) {
+        return new GetAllRoomsUseCase(chatRoomRepository, loggerPort);
+    }
+    
+    @Bean
+    public LoginUseCase loginUseCase(AuthTokenRepository authTokenRepository, LoggerPort loggerPort) {
+        return new LoginUseCase(authTokenRepository, loggerPort);
     }
 }

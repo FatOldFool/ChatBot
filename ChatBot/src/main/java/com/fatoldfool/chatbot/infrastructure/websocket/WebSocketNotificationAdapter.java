@@ -15,7 +15,16 @@ public class WebSocketNotificationAdapter implements NotificationPort {
 
     @Override
     public void sendToRoom(Long roomId, Message message) {
-        // Отправляем сообщение в STOMP-канал /topic/room/{roomId}
         messagingTemplate.convertAndSend("/topic/room/" + roomId, message);
+    }
+
+    @Override
+    public void sendToRoom(Long roomId, Object payload) {
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, payload);
+    }
+
+    @Override
+    public void sendToUser(String sessionId, Object payload) {
+        messagingTemplate.convertAndSendToUser(sessionId, "/queue/errors", payload);
     }
 }

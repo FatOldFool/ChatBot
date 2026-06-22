@@ -15,7 +15,12 @@ public class GetRoomMessagesUseCase {
     }
 
     public List<Message> execute(Long roomId) {
-        logger.info("Fetching messages for room {}", roomId);
+        logger.info("Fetching all messages for room {}", roomId);
         return messageRepository.findByRoomId(roomId);
+    }
+
+    public List<Message> execute(Long roomId, int limit, int offset) {
+        logger.info("Fetching messages for room {} with limit {} offset {}", roomId, limit, offset);
+        return messageRepository.findByRoomId(roomId, limit, offset);
     }
 }

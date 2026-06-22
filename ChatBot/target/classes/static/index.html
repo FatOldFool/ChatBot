@@ -10,7 +10,33 @@
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
 <body>
-<div class="chat-app">
+
+<!-- Модальное окно входа -->
+<div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+        <div class="login-icon"><i class="fas fa-heart"></i></div>
+        <h2>УютныйЧатик</h2>
+        <p>Введите ваше имя, чтобы начать общение</p>
+        <input type="text" id="login-username" placeholder="Ваше имя" maxlength="30" autocomplete="off">
+        <div id="login-error" class="login-error"></div>
+        <button id="login-btn"><i class="fas fa-sign-in-alt"></i> Войти</button>
+    </div>
+</div>
+
+<!-- Модальное окно создания комнаты -->
+<div id="create-room-overlay" class="login-overlay" style="display: none;">
+    <div class="login-card">
+        <div class="login-icon"><i class="fas fa-plus-circle"></i></div>
+        <h2>Новая комната</h2>
+        <p>Введите название комнаты</p>
+        <input type="text" id="new-room-name-input" placeholder="Название комнаты" maxlength="50" autocomplete="off">
+        <div id="create-room-error" class="login-error"></div>
+        <button id="create-room-submit-btn"><i class="fas fa-check"></i> Создать</button>
+    </div>
+</div>
+
+<!-- Основной интерфейс чата (скрыт до входа) -->
+<div class="chat-app" id="chat-app" style="display: none;">
     <!-- Боковая панель -->
     <div class="sidebar">
         <div class="sidebar-header">
@@ -20,12 +46,11 @@
             <!-- Комнаты будут добавлены динамически -->
         </div>
         <div class="create-room">
-            <input type="text" id="new-room-name" placeholder="Название комнаты">
-            <button id="create-room-btn"><i class="fas fa-plus"></i> Создать</button>
+            <button id="open-create-room-btn"><i class="fas fa-plus"></i> Создать комнату</button>
         </div>
         <div class="user-info">
             <label><i class="fas fa-user-circle"></i> Ваше имя</label>
-            <input type="text" id="display-name" placeholder="Имя">
+            <input type="text" id="display-name" placeholder="Имя" disabled>
         </div>
         <div class="theme-toggle">
             <button id="theme-btn"><i class="fas fa-moon"></i> Тёмная тема</button>
@@ -41,6 +66,9 @@
             <div class="welcome-message">
                 <i class="fas fa-comment-dots"></i> Выберите комнату слева, чтобы начать общение
             </div>
+            <button id="load-more-btn" style="display:none; margin:10px auto; padding:8px 16px; border:none; border-radius:20px; background:var(--btn-bg); color:white; cursor:pointer;">
+                Загрузить ещё
+            </button>
         </div>
         <div class="message-input-area">
             <input type="text" id="message-input" placeholder="Введите сообщение..." disabled>
@@ -48,6 +76,7 @@
         </div>
     </div>
 </div>
+
 <script src="/js/chat.js"></script>
 </body>
 </html>

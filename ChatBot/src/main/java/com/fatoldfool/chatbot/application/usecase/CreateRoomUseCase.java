@@ -16,12 +16,11 @@ public class CreateRoomUseCase {
     }
 
     public CreateRoomResult execute(CreateRoomCommand command) {
-        logger.info("Creating room with name: {} by user: {}", command.roomName(), command.creatorSessionId());
+        logger.info("Creating room with name: {} by user: {}", command.roomName(), command.creatorUsername());
         try {
-            // Проверка, существует ли уже комната с таким именем
             var existing = roomRepository.findByName(command.roomName());
             if (existing.isPresent()) {
-                logger.info("Room already exists: {}", command.roomName()); // заменено warn на info
+                logger.info("Room already exists: {}", command.roomName());
                 return CreateRoomResult.failure("Room with name '" + command.roomName() + "' already exists");
             }
 

@@ -24,17 +24,16 @@ public class SendChatMessageUseCase {
     }
 
     public void execute(SendChatMessageCommand command) {
-        logger.info("Sending message to room {} from user {}", command.roomId(), command.userId());
+        logger.info("Sending message to room {} from user {}", command.roomId(), command.username());
         transactionPort.executeInTransaction(() -> {
-            String userName = command.userName() != null ? command.userName() : "Anonymous";
+            String userName = command.username() != null ? command.username() : "Anonymous";
             Message message = Message.createNew(
                 command.roomId(),
-                command.userId(),
+                command.username(),  // userId теперь = username (упрощённо)
                 userName,
                 command.content()
             );
             Message saved = messageRepository.save(message);
-            // Отправить сообщение всем в комнате через WebSocket
             notificationPort.sendToRoom(command.roomId(), saved);
             return saved;
         });

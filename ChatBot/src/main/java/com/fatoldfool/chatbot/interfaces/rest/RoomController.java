@@ -3,15 +3,18 @@ package com.fatoldfool.chatbot.interfaces.rest;
 import com.fatoldfool.chatbot.application.command.CreateRoomCommand;
 import com.fatoldfool.chatbot.application.result.CreateRoomResult;
 import com.fatoldfool.chatbot.application.usecase.CreateRoomUseCase;
+import com.fatoldfool.chatbot.application.usecase.GetAllRoomsUseCase;
 import com.fatoldfool.chatbot.application.usecase.GetRoomMessagesUseCase;
-import com.fatoldfool.chatbot.domain.model.ChatRoom;
+import com.fatoldfool.chatbot.domain.exception.TooManyRequestsException;
 import com.fatoldfool.chatbot.domain.model.Message;
-import com.fatoldfool.chatbot.domain.port.ChatRoomRepository;
+import com.fatoldfool.chatbot.infrastructure.ratelimit.RateLimiter;
 import com.fatoldfool.chatbot.interfaces.rest.dto.CreateRoomRequest;
 import com.fatoldfool.chatbot.interfaces.rest.dto.RoomResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,24 +28,33 @@ import java.util.stream.Collectors;
 public class RoomController {
 
     private final CreateRoomUseCase createRoomUseCase;
-    private final ChatRoomRepository chatRoomRepository;
+    private final GetAllRoomsUseCase getAllRoomsUseCase;
     private final GetRoomMessagesUseCase getRoomMessagesUseCase;
+    private final RateLimiter rateLimiter;
 
     public RoomController(CreateRoomUseCase createRoomUseCase,
-                          ChatRoomRepository chatRoomRepository,
-                          GetRoomMessagesUseCase getRoomMessagesUseCase) {
+                          GetAllRoomsUseCase getAllRoomsUseCase,
+                          GetRoomMessagesUseCase getRoomMessagesUseCase,
+                          RateLimiter rateLimiter) {
         this.createRoomUseCase = createRoomUseCase;
-        this.chatRoomRepository = chatRoomRepository;
+        this.getAllRoomsUseCase = getAllRoomsUseCase;
         this.getRoomMessagesUseCase = getRoomMessagesUseCase;
+        this.rateLimiter = rateLimiter;
     }
 
     @PostMapping
     public ResponseEntity<?> createRoom(@Valid @RequestBody CreateRoomRequest request) {
-        CreateRoomCommand command = new CreateRoomCommand(request.getRoomName(), request.getCreatorSessionId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName(); // username из токена
+
+        if (!rateLimiter.tryAcquire("createRoom:" + username, 5, 60)) {
+            throw new TooManyRequestsException("Слишком много запросов. Подождите минуту.");
+        }
+
+        CreateRoomCommand command = new CreateRoomCommand(request.getRoomName(), username);
         CreateRoomResult result = createRoomUseCase.execute(command);
         if (result.success()) {
-            RoomResponse response = toResponse(result.room());
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(result.room()));
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", result.errorMessage()));
         }
@@ -50,16 +62,17 @@ public class RoomController {
 
     @GetMapping
     public ResponseEntity<List<RoomResponse>> getAllRooms() {
-        List<ChatRoom> rooms = chatRoomRepository.findAll();
-        List<RoomResponse> responses = rooms.stream()
+        List<RoomResponse> responses = getAllRoomsUseCase.execute().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/{roomId}/messages")
-    public ResponseEntity<?> getRoomMessages(@PathVariable Long roomId) {
-        List<Message> messages = getRoomMessagesUseCase.execute(roomId);
+    public ResponseEntity<?> getRoomMessages(@PathVariable Long roomId,
+                                             @RequestParam(defaultValue = "50") int limit,
+                                             @RequestParam(defaultValue = "0") int offset) {
+        List<Message> messages = getRoomMessagesUseCase.execute(roomId, limit, offset);
         List<Map<String, Object>> response = messages.stream()
                 .map(msg -> {
                     Map<String, Object> map = new HashMap<>();
@@ -75,7 +88,7 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    private RoomResponse toResponse(ChatRoom room) {
+    private RoomResponse toResponse(com.fatoldfool.chatbot.domain.model.ChatRoom room) {
         return new RoomResponse(room.getId(), room.getName(), room.getCreatedAt().toString());
     }
 }
